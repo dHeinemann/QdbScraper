@@ -11,11 +11,15 @@ ABOUT
  QdbS", which appears on the bottom of each QdbS page.
 
 USAGE INSTRUCTIONS
- QdbScraper.pl [-p total_number_of_pages] [-w wait_delay] URL
+ QdbScraper.pl [-d] [-p] [-s] [-w] URL
  
+   -d        Manually set the directory that quotes are saved into.
+             (default: automatic)
    -w        Manually set the wait delay (in seconds) between each page
-             load (default: 2)
-   -p        Manually set the total number of pages (default: automatic)
+             load. (default: 2)
+   -s        Manually set the starting page. (default: 1)
+   -p        Manually set the total number of pages.
+             (default: automatic)
    URL       The URL of the QDB to be scraped.  See URL Instructions for
              more information.
  
