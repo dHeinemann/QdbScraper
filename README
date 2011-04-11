@@ -1,8 +1,33 @@
 ABOUT
- QdbScraper is a Perl script for extracting IRC quotes from QdbS-powered
- quote databases.  Given a URL, it will scrape the Browse pages for
- quotes and save them as text files.
+ QdbScraper is a tool for scraping QdbS-powered quote databases (similar
+ to Bash.org).  Currently, it successfully scrapes any QdbS installation
+ that uses the default theme and/or minimal customization, and saves the
+ quotes as individual txt files, named after their quote ID. There are a
+ couple of other commonly used QdbS templates, so I'll soon add support
+ for those too.
 
+ QdbS itself can be downloaded from www.qdbs.org.  You can easily find
+ other QdbS quote databases on the web by Googling for "Powered by
+ QdbS", which appears on the bottom of each QdbS page.
+
+USAGE INSTRUCTIONS
+ QdbScraper.pl [-p total_number_of_pages] [-w wait_delay] URL
+ 
+   -w        Manually set the wait delay (in seconds) between each page
+             load (default: 2)
+   -p        Manually set the total number of pages (default: automatic)
+   URL       The URL of the QDB to be scraped.  See URL Instructions for
+             more information.
+ 
+ URL Instructions:
+   Always omit file names in the URL.
+     use:        http://www.foobar.com/qdb
+     instead of: http://www.foobar.com/qdb/index.php
+ 
+   Always omit trailing slashes in the URL.
+     use:        http://www.foobar.com/qdb
+     instead of: http://www.foobar.com/qdb/
+ 
 LICENSE
  QdbScraper is licensed under the New BSD License.
  
@@ -32,22 +57,3 @@ LICENSE
  STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
  IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
-
-USAGE INSTRUCTIONS
- QdbScraper.pl [-p total_number_of_pages] [-w wait_delay] URL
- 
-   -w        Manually set the wait delay (in seconds) between each page
-             load (default: 2)
-   -p        Manually set the total number of pages (default: automatic)
-   URL       The URL of the QDB to be scraped.  See URL Instructions for
-             more information.
- 
- URL Instructions:
-   Always omit file names in the URL.
-     use:        http://www.foobar.com/qdb
-     instead of: http://www.foobar.com/qdb/index.php
- 
-   Always omit trailing slashes in the URL.
-     use:        http://www.foobar.com/qdb
-     instead of: http://www.foobar.com/qdb/
- 

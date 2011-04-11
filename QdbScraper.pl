@@ -38,28 +38,22 @@ use WWW::Mechanize;
 use Scalar::Util qw(looks_like_number);
 use Getopt::Std;
 
-our ($opt_p, $opt_w);
-getopt('pw');
+our ($opt_d, $opt_p, $opt_s, $opt_w);
+getopt('dpsw');
 
 my $url           = "";
+my $directory     = "";
 my $quoteList     = "quotelist.txt";
 my $pageNo        = 1;
 my $lastPageNo    = 9000;
 my $wait          = 2;
 my $quoteCounter  = 0;
 
-#-w
-if ($opt_w)
+#-d
+if ($opt_d)
 {
-	if (looks_like_number($opt_w))
-	{
-		$wait = $opt_w;
-		print("Wait delay manually set to $wait.\n\n");
-	}
-	else
-	{
-		die("Invalid wait delay specified.  You gave: $opt_w'.\n");
-	}
+	$directory  = $opt_d;
+	print("Directory manually set to '$directory'.\n\n");
 }
 
 #-p
@@ -72,18 +66,50 @@ if ($opt_p)
 	}
 	else
 	{
-		die("Invalid number of pages specified.  You gave: '$opt_p'.\n");
+		die("Invalid number of pages specified.  You gave '$opt_p'.\n");
 	}
 }
+
+#-s
+if ($opt_s)
+{
+	if (looks_like_number($opt_s))
+	{
+		$pageNo = $opt_s;
+		print("Starting page number manually set to $pageNo.\n\n");
+	}
+	else
+	{
+		die("Invalid starting page specified.  You gave '$opt_s'.\n");
+	}
+}
+
+#-w
+if ($opt_w)
+{
+	if (looks_like_number($opt_w))
+	{
+		$wait = $opt_w;
+		print("Wait delay manually set to $wait.\n\n");
+	}
+	else
+	{
+		die("Invalid wait delay specified.  You gave '$opt_w'.\n");
+	}
+}
+
 
 my $instructions  = <<TEXT;
 Scrape a QdbS-powered quote database.
 
-QdbScraper.pl [-p total_number_of_pages] [-w wait_delay] URL
+QdbScraper.pl [-d] [-p] [-s] [-w] URL
 
+  -d        Manually set the directory that quotes are saved into.
+            (default: automatic)
   -w        Manually set the wait delay (in seconds) between each page
-            load (default: 2)
-  -p        Manually set the total number of pages (default: automatic)
+            load. (default: 2)
+  -s        Manually set the starting page. (default: 1)
+  -p        Manually set the total number of pages. (default: automatic)
   URL       The URL of the QDB to be scraped.  See URL Instructions for
             more information.
 
@@ -100,6 +126,14 @@ TEXT
 if ($ARGV[0])
 {
 	$url = $ARGV[0] . "/index.php?p=browse&page=";
+	$directory = &urlToDirectory($ARGV[0]) if ($directory eq "");
+
+	#Create $directory if it doesn't already exist
+	unless (-d $directory)
+	{
+		mkdir("$directory") or die("Error: Couldn't create directory $directory.\n");
+	}
+	chdir($directory);
 }
 else
 {
@@ -184,7 +218,7 @@ sub scanPage()
 				open(OUTFILE, ">$id.txt");
 				print(OUTFILE "$text");
 				close(OUTFILE);
-				print("  saved #$id ($id.txt)\n");
+				print("  saved #$id ($directory/$id.txt)\n");
 				$quoteCounter++;
 			}
 			else
@@ -196,4 +230,16 @@ sub scanPage()
 	}
 	print("Page $pageNo done.\n\n");
 	$pageNo++;
+}
+
+sub urlToDirectory()
+{
+	#Turn the URL into a filename-friendly format
+	#Removes "http://", "www." and replace forward slashes with dashes
+	#to ensure there are no issues with invalid characters
+	my $new = $_[0];
+	$new =~ s/http:\/\///gi;
+	$new =~ s/www.//gi;
+	$new =~ s/\//-/gi;
+	return $new;
 }
