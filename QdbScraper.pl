@@ -1,4 +1,4 @@
-#!/usr/bin/Perl
+#!/usr/bin/perl
 
 # QdbScraper.pl
 # A QdbS quote database scraper (see www.qdbs.org)
@@ -38,25 +38,33 @@ use WWW::Mechanize;
 use Scalar::Util qw(looks_like_number);
 use Getopt::Std;
 
-our ($opt_d, $opt_p, $opt_s, $opt_w);
+our ($opt_d, $opt_f, $opt_p, $opt_s, $opt_w);
 getopt('dpsw');
+getopts('f');
+#TODO: Single-file mode - Appends all quotes to each other into a single file (-c for concatenate?)
+#TODO: Fortune cookie only mode
 
+my $baseUrl       = "";
 my $url           = "";
 my $directory     = "";
 my $quoteList     = "quotelist.txt";
 my $pageNo        = 1;
-my $lastPageNo    = 9000;
+my $lastPageNo    = 0;
 my $wait          = 2;
 my $quoteCounter  = 0;
+my $fortune       = 0;
 
-#-d
 if ($opt_d)
 {
 	$directory  = $opt_d;
 	print("Directory manually set to '$directory'.\n\n");
 }
 
-#-p
+if ($opt_f and $opt_f == 1)
+{
+	$fortune = 1;
+}
+
 if ($opt_p)
 {
 	if (looks_like_number($opt_p))
@@ -70,7 +78,6 @@ if ($opt_p)
 	}
 }
 
-#-s
 if ($opt_s)
 {
 	if (looks_like_number($opt_s))
@@ -84,7 +91,6 @@ if ($opt_s)
 	}
 }
 
-#-w
 if ($opt_w)
 {
 	if (looks_like_number($opt_w))
@@ -98,14 +104,14 @@ if ($opt_w)
 	}
 }
 
-
 my $instructions  = <<TEXT;
 Scrape a QdbS-powered quote database.
 
-QdbScraper.pl [-d] [-p] [-s] [-w] URL
+QdbScraper.pl [-d] [-f] [-p] [-s] [-w] URL
 
   -d        Manually set the directory that quotes are saved into.
             (default: automatic)
+  -f        Create a fortune cookie file from extracted quotes (boolean)
   -w        Manually set the wait delay (in seconds) between each page
             load. (default: 2)
   -s        Manually set the starting page. (default: 1)
@@ -125,8 +131,9 @@ TEXT
 
 if ($ARGV[0])
 {
-	$url = $ARGV[0] . "/index.php?p=browse&page=";
-	$directory = &urlToDirectory($ARGV[0]) if ($directory eq "");
+	$baseUrl = $ARGV[0];
+	$url = $baseUrl . "/index.php?p=browse&page=";
+	$directory = &urlToDirectory($baseUrl) if ($directory eq "");
 
 	#Create $directory if it doesn't already exist
 	unless (-d $directory)
@@ -141,24 +148,28 @@ else
 }
 
 print("Opening $quoteList for write...\n");
-open(QUOTELIST, ">$quoteList") or die("Error: Couldn't open $quoteList for writing.\n");
+open(QUOTELIST, ">$quoteList");
+open(FORTUNE, ">fortune.txt") if $fortune == 1;
 
 my $mech = WWW::Mechanize->new(agent => 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.634.0 Safari/534.16');
 
-while ($pageNo <= $lastPageNo)
+do
 {
 	&scanPage();
 	print("Sleeping for $wait seconds...\n\n");
+	$pageNo++;
 	sleep($wait);
-}
+} while ($pageNo <= $lastPageNo);
+
 close(QUOTELIST);
-print("Finished.  $quoteCounter quotes saved.\n");
+close(FORTUNE) if $fortune == 1;
+print("Finished.  $quoteCounter quotes were saved.\n");
 
 sub getLastPageNo()
 {
 	#Searches the Browse page for the highest available page number
 	my $page = HTML::TokeParser->new(\$mech->{content});
-	print("Finding the total number of pages...\n");
+	print("\nFinding the total number of pages...\n");
 	while (my $tag = $page->get_tag("a"))
 	{
 		if ($tag->[1]{title} and $tag->[1]{title} =~ m/Last Page/gi)
@@ -186,9 +197,9 @@ sub scanPage()
 {
 	#Scan the current page for quotes
 	print("Fetching page $pageNo ($url$pageNo)...\n");
-	$mech->get("$url" . "$pageNo");
+	$mech->get("$url$pageNo");
 
-	&getLastPageNo() if $lastPageNo == 9000;
+	&getLastPageNo() if $lastPageNo == 0;
 	my $page = HTML::TokeParser->new(\$mech->{content});
 
 	print("Looking for quotes...\n");
@@ -211,12 +222,18 @@ sub scanPage()
 					$tag = $page->get_tag();
 				} while ($tag->[0] ne "/td");
 
-				#Remove blank lines at the start and end of the quote
-				$text =~ s/^\n//gi;
-				$text =~ s/\n$//gi;
+				#Remove blank lines
+				#TODO: Instead, test to see if $text matches any of these, then keep iterating until it doesn't.
+				for (my $i = 0; $i <= 2; $i++)
+				{
+					$text =~ s/^\n//gi;
+					$text =~ s/\n$//gi;
+					$text =~ s/\n\n//gi;
+				}
 
 				open(OUTFILE, ">$id.txt");
 				print(OUTFILE "$text");
+				print(FORTUNE "$text\n\n\t$baseUrl?$id\n%\n") if $fortune == 1;
 				close(OUTFILE);
 				print("  saved #$id ($directory/$id.txt)\n");
 				$quoteCounter++;
@@ -228,8 +245,7 @@ sub scanPage()
 			}
 		}
 	}
-	print("Page $pageNo done.\n\n");
-	$pageNo++;
+	print("Completed $pageNo of $lastPageNo.\n\n");
 }
 
 sub urlToDirectory()

@@ -11,26 +11,28 @@ ABOUT
  QdbS", which appears on the bottom of each QdbS page.
 
 USAGE INSTRUCTIONS
- QdbScraper.pl [-d] [-p] [-s] [-w] URL
- 
-   -d        Manually set the directory that quotes are saved into.
-             (default: automatic)
-   -w        Manually set the wait delay (in seconds) between each page
-             load. (default: 2)
-   -s        Manually set the starting page. (default: 1)
-   -p        Manually set the total number of pages.
-             (default: automatic)
-   URL       The URL of the QDB to be scraped.  See URL Instructions for
-             more information.
- 
- URL Instructions:
-   Always omit file names in the URL.
-     use:        http://www.foobar.com/qdb
-     instead of: http://www.foobar.com/qdb/index.php
- 
-   Always omit trailing slashes in the URL.
-     use:        http://www.foobar.com/qdb
-     instead of: http://www.foobar.com/qdb/
+Scrape a QdbS-powered quote database.
+
+QdbScraper.pl [-d] [-f] [-p] [-s] [-w] URL
+
+  -d        Manually set the directory that quotes are saved into.
+            (default: automatic)
+  -f        Create a fortune cookie file from extracted quotes (boolean)
+  -w        Manually set the wait delay (in seconds) between each page
+            load. (default: 2)
+  -s        Manually set the starting page. (default: 1)
+  -p        Manually set the total number of pages. (default: automatic)
+  URL       The URL of the QDB to be scraped.  See URL Instructions for
+            more information.
+
+URL Instructions:
+  Always omit file names in the URL.
+    use:        http://www.foobar.com/qdb
+    instead of: http://www.foobar.com/qdb/index.php
+
+  Always omit trailing slashes in the URL.
+    use:        http://www.foobar.com/qdb
+    instead of: http://www.foobar.com/qdb/
  
 LICENSE
  QdbScraper is licensed under the New BSD License.
