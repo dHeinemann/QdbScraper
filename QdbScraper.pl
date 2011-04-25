@@ -38,9 +38,13 @@ use WWW::Mechanize;
 use Scalar::Util qw(looks_like_number);
 use Getopt::Std;
 
-our ($opt_d, $opt_p, $opt_s, $opt_w);
+our ($opt_d, $opt_f, $opt_p, $opt_s, $opt_w);
 getopt('dpsw');
+getopts('f');
+#TODO: Single-file mode - Appends all quotes to each other into a single file (-c for concatenate?)
+#TODO: Fortune cookie only mode
 
+my $baseUrl       = "";
 my $url           = "";
 my $directory     = "";
 my $quoteList     = "quotelist.txt";
@@ -48,15 +52,19 @@ my $pageNo        = 1;
 my $lastPageNo    = 9000;
 my $wait          = 2;
 my $quoteCounter  = 0;
+my $fortune       = 0;
 
-#-d
 if ($opt_d)
 {
 	$directory  = $opt_d;
 	print("Directory manually set to '$directory'.\n\n");
 }
 
-#-p
+if ($opt_f and $opt_f == 1)
+{
+	$fortune = 1;
+}
+
 if ($opt_p)
 {
 	if (looks_like_number($opt_p))
@@ -70,7 +78,6 @@ if ($opt_p)
 	}
 }
 
-#-s
 if ($opt_s)
 {
 	if (looks_like_number($opt_s))
@@ -84,7 +91,6 @@ if ($opt_s)
 	}
 }
 
-#-w
 if ($opt_w)
 {
 	if (looks_like_number($opt_w))
@@ -106,6 +112,7 @@ QdbScraper.pl [-d] [-p] [-s] [-w] URL
 
   -d        Manually set the directory that quotes are saved into.
             (default: automatic)
+  -f        Create a fortune cookie file from extracted quotes (boolean)
   -w        Manually set the wait delay (in seconds) between each page
             load. (default: 2)
   -s        Manually set the starting page. (default: 1)
@@ -125,8 +132,9 @@ TEXT
 
 if ($ARGV[0])
 {
-	$url = $ARGV[0] . "/index.php?p=browse&page=";
-	$directory = &urlToDirectory($ARGV[0]) if ($directory eq "");
+	$baseUrl = $ARGV[0];
+	$url = $baseUrl . "/index.php?p=browse&page=";
+	$directory = &urlToDirectory($baseUrl) if ($directory eq "");
 
 	#Create $directory if it doesn't already exist
 	unless (-d $directory)
@@ -142,6 +150,7 @@ else
 
 print("Opening $quoteList for write...\n");
 open(QUOTELIST, ">$quoteList") or die("Error: Couldn't open $quoteList for writing.\n");
+open(FORTUNE, ">fortune.txt") if $fortune == 1;
 
 my $mech = WWW::Mechanize->new(agent => 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.634.0 Safari/534.16');
 
@@ -152,6 +161,7 @@ while ($pageNo <= $lastPageNo)
 	sleep($wait);
 }
 close(QUOTELIST);
+close(FORTUNE) if $fortune == 1;
 print("Finished.  $quoteCounter quotes saved.\n");
 
 sub getLastPageNo()
@@ -211,12 +221,18 @@ sub scanPage()
 					$tag = $page->get_tag();
 				} while ($tag->[0] ne "/td");
 
-				#Remove blank lines at the start and end of the quote
-				$text =~ s/^\n//gi;
-				$text =~ s/\n$//gi;
+				#Remove blank lines
+				#TODO: Instead, test to see if $text matches any of these, then keep iterating until it doesn't.
+				for (my $i = 0; $i <= 2; $i++)
+				{
+					$text =~ s/^\n//gi;
+					$text =~ s/\n$//gi;
+					$text =~ s/\n\n//gi;
+				}
 
 				open(OUTFILE, ">$id.txt");
 				print(OUTFILE "$text");
+				print(FORTUNE "$text\n\n\t$baseUrl?$id\n%\n");
 				close(OUTFILE);
 				print("  saved #$id ($directory/$id.txt)\n");
 				$quoteCounter++;
